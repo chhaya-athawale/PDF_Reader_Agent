@@ -151,37 +151,33 @@ def main():
                 with st.chat_message("assistant"):
                     st.write(bot_msg)
 
-        query = st.text_input("Ask a question from the PDFs")
+        # Display input box at bottom
+        query = st.chat_input("Ask a question from the PDFs...")
 
-        # Button to submit query
-        submit = st.button("Submit")
-
-        if submit and query:
+        if query:
             result = st.session_state.qa({
                 "question": query,
                 "chat_history": st.session_state["history"]
             })
 
-
             answer = result["answer"]
-            st.write(answer)
-            # Store conversation memory
-            #st.session_state["history"].append((query, answer))
 
-            # Show new assistant answer
-            # with st.chat_message("assistant"):
-            #     st.write(answer)
+            # Display latest conversation
+            st.chat_message("user").write(query)
+            st.chat_message("assistant").write(answer)
 
+            # Save history
+            st.session_state["history"].append((query, answer))
 
-            # Display sources
-            st.subheader("📄 Sources")
-            for doc in result["source_documents"]:
-                filename = doc.metadata.get("source", "Unknown File")
-                page = doc.metadata.get("page", 0) + 1
-                st.write(f"📎 {filename} — Page {page}")
+            # Show sources
+            with st.expander("Sources"):
+                for doc in result["source_documents"]:
+                    filename = doc.metadata.get("source", "Unknown File")
+                    page = doc.metadata.get("page", 0) + 1
+                    st.write(f"{filename} — Page {page}")
 
             # Save history (not displayed per your requirement)
-            st.session_state["history"].append((query, answer))
+            #st.session_state["history"].append((query, answer))
 
         
 if __name__ == "__main__":
