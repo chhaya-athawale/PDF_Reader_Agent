@@ -116,7 +116,11 @@ def main():
 
     set_gemini_key()
 
-    # Chat history (even if not shown)
+    # Track uploaded PDF names
+    if "uploaded_names" not in st.session_state:
+        st.session_state["uploaded_names"] = []
+
+    # Chat history
     if "history" not in st.session_state:
         st.session_state["history"] = []
 
@@ -127,20 +131,27 @@ def main():
         accept_multiple_files=True
     )
 
-    # ---------------------------
-    # Process PDFs only once
-    # ---------------------------
-    if uploaded_files and "qa" not in st.session_state:
-        with st.spinner("Processing PDFs... ⏳"):
-            pages = load_pdfs(uploaded_files)
-            docs = split_into_chunks(pages)
-            db = create_vector_db(docs)
-            st.session_state.qa = create_qa_chain(db)
+    # ---------------------------------------------------------
+    # If new PDFs are uploaded, reprocess and rebuild vector DB
+    # ---------------------------------------------------------
+    if uploaded_files:
+        current_files = [file.name for file in uploaded_files]
 
-        st.success("📁 PDFs processed successfully! Ask your question 🚀")
+        if current_files != st.session_state["uploaded_names"]:
+            with st.spinner("Processing PDFs... ⏳"):
+                pages = load_pdfs(uploaded_files)
+                docs = split_into_chunks(pages)
+                db = create_vector_db(docs)
+                st.session_state.qa = create_qa_chain(db)
 
-    # Only show input if QA chain is ready
+            st.session_state["uploaded_names"] = current_files
+            st.success("📁 PDFs processed successfully!")
+
+    # ---------------------------------------------------------
+    # Start chat once QA chain exists
+    # ---------------------------------------------------------
     if "qa" in st.session_state:
+
         # Show past messages
         if st.session_state["history"]:
             st.write("### 💬 Conversation")
@@ -151,7 +162,7 @@ def main():
                 with st.chat_message("assistant"):
                     st.write(bot_msg)
 
-        # Display input box at bottom
+        # Display chat input box at bottom
         query = st.chat_input("Ask a question from the PDFs...")
 
         if query:
@@ -166,11 +177,11 @@ def main():
             st.chat_message("user").write(query)
             st.chat_message("assistant").write(answer)
 
-            # Save history
+            # Save conversation history
             st.session_state["history"].append((query, answer))
 
-            # Show sources
-            with st.expander("Sources"):
+            # Display sources
+            with st.expander("📎 Sources"):
                 for doc in result["source_documents"]:
                     filename = doc.metadata.get("source", "Unknown File")
                     page = doc.metadata.get("page", 0) + 1
