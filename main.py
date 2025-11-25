@@ -1,9 +1,7 @@
 import streamlit as st
-from streamlit_pdf_viewer import pdf_viewer
 from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import FAISS
-from langchain.chains import RetrievalQA
 from langchain.chains import ConversationalRetrievalChain
 
 
