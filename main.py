@@ -1,4 +1,5 @@
 import streamlit as st
+from streamlit_pdf_viewer import pdf_viewer
 from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import FAISS
@@ -115,21 +116,35 @@ def main():
     st.title("📚 Chat with Multiple PDFs (Gemini + LangChain)")
 
     set_gemini_key()
+    # -------------------------------
+    # Sidebar – Chat History View
+    # -------------------------------
+    with st.sidebar:
+        st.header("🗂 Chat History")
 
-    # Track uploaded PDF names
-    if "uploaded_names" not in st.session_state:
-        st.session_state["uploaded_names"] = []
+        if "history" not in st.session_state:
+            st.session_state["history"] = []
 
-    # Chat history
-    if "history" not in st.session_state:
-        st.session_state["history"] = []
+        if len(st.session_state["history"]) == 0:
+            st.write("No conversations yet.")
+        else:
+            for i, (user_msg, bot_msg) in enumerate(st.session_state["history"]):
+                st.write(f"**Q{i+1}:** {user_msg[:40]}...")
 
-    # Upload PDFs
-    uploaded_files = st.file_uploader(
-        "Upload PDF files",
-        type=["pdf"],
-        accept_multiple_files=True
-    )
+        # Track uploaded PDF names
+        if "uploaded_names" not in st.session_state:
+            st.session_state["uploaded_names"] = []
+
+        # Chat history
+        if "history" not in st.session_state:
+            st.session_state["history"] = []
+
+        # Upload PDFs
+        uploaded_files = st.file_uploader(
+            "Upload PDF files",
+            type=["pdf"],
+            accept_multiple_files=True
+        )
 
     # ---------------------------------------------------------
     # If new PDFs are uploaded, reprocess and rebuild vector DB
@@ -187,8 +202,6 @@ def main():
                     page = doc.metadata.get("page", 0) + 1
                     st.write(f"{filename} — Page {page}")
 
-            # Save history (not displayed per your requirement)
-            #st.session_state["history"].append((query, answer))
 
         
 if __name__ == "__main__":
